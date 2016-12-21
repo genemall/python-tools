@@ -1,0 +1,66 @@
+1.核查主内部编码 
+债券名称相同 主内部编码不同
+SELECT * FROM P12001 T 
+LEFT JOIN  (Select Distinct F1,F4 From P12001) X  on X.F4=T.F4
+WHERE  X.F1<>T.F1
+
+编码相同 名称不同
+SELECT * FROM P12001 T 
+INNER JOIN  (Select Distinct F1,F4 From P12001 GROUP BY F1) X  on X.F1=T.F1 
+WHERE  X.F4<>T.F4 
+
+2.核查债券名称
+select * from P12001 where F4 LIKE "%募集%"  OR
+ F5 LIKE "%MTN%" AND F4 NOT  LIKE "%中期票据%"  OR
+ F5 LIKE "%SCP%" AND F4 NOT  LIKE "%超短期融资券%"  OR
+ F5 LIKE "%CP%" AND F4 NOT  LIKE "%短期融资券%" 
+
+3.核查债券简称：
+select * from P12001 where 
+ F5 LIKE "%中期票据%" AND F4 NOT  LIKE "%MTN%"  OR
+ F5 LIKE "%超短期融资券%" AND F4 NOT  LIKE "%SCP%"  OR
+ F5 LIKE "%短期融资券%" AND F4 NOT  LIKE "%CP%" 
+
+4.核查发行人
+select *  from P12001 where F4 not like CONCAT('%',F7,'%') 
+AND F10 NOT IN (2,3,10,12,15,16,7,11,14) ###更名的如何核查???
+
+5.核查证券市场 
+SELECT * FROM P12001 WHERE 
+F10 IN (1,6,10,7,13,14,21,8,9,11,17,20,24,25,26)
+AND F9!= "3"   
+
+SELECT * FROM P12001
+WHERE F10 = "5" AND F9 NOT IN (1,2)  ###公司债 却不是上交所或深交所
+
+6.检查债券种类
+SELECT * FROM P12001 WHERE 
+F5 LIKE "%MTN%" AND F10 != "6" OR F5 LIKE "%SCP%" AND F10 != "1" 
+OR F5 LIKE "%PPN%" AND F10 != "24" OR F5 LIKE "%CP%" AND F10 != "13" AND F5 NOT LIKE "%SCP%"
+
+SELECT * FROM P12001 S 
+INNER JOIN  (select F1 from P12001  group by F1  having count(*) > 1) X
+ON X.F1 = S.F1  WHERE F10 not in (2,4,12,7,15,16,22,23,3) ###主内部编码一样但不是企业债
+
+7.核查币种
+SELECT * FROM P12001 WHERE F11 != "1" OR F11 IS NULL
+
+8.核查上市状态
+SELECT * FROM P12001 WHERE F12  < "20160918" AND F13 NOT IN (2,4,3,9)###问题不大 先不改
+
+
+9.核查上市日期为空
+select * from P12001 where F5 LIKE "%SCP（CP,MTN,PPN）%" AND F12 IS NULL AND F13 != "9"
+
+10.核查字段为空
+select * from P12001 where F9 IS NULL OR F10 IS NULL OR F11 IS NULL 
+
+发行增发表：
+1.核查本期发行额
+select * from P12003 S LEFT join P12001 T on S.F1 = T.F1 
+WHERE  S.F16 IS NULL  AND T.F13 != "9"   ##没改
+
+缴款日、
+select * from P12003 S LEFT join P12001 T on S.F1 = T.F1 
+WHERE  S.F38 IS NULL  AND T.F13 != "9" AND S.F10 != "4"
+
